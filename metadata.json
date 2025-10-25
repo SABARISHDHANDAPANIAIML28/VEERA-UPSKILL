@@ -1,0 +1,5 @@
+{
+  "name": "Veera Upskill",
+  "description": "A web application for practicing coding problems and receiving instant feedback powered by the Gemini API.",
+  "requestFramePermissions": []
+}
