@@ -2,6 +2,8 @@
 
 export type Language = 'C';
 
+export type Level = 'Loops' | 'Arrays' | 'Strings' | 'Functions';
+
 export interface CodeSnippets {
   C: string;
 }
@@ -19,6 +21,7 @@ export interface Problem {
   description: string;
   examples: ProblemExample[];
   constraints: string[];
+  level: Level;
 }
 
 export interface TestCaseResult {
@@ -43,6 +46,8 @@ export interface Test {
   solutions: {
     [problemId: number]: CodeSnippets
   };
+  endTime: number;
+  level: Level;
 }
 
 export interface FinalResult {
@@ -59,6 +64,7 @@ export interface TestResultRecord {
   testDate: number; // timestamp
   totalScore: number;
   results: FinalResult[];
+  level: Level;
 }
 
 // User Profile for ID-based login

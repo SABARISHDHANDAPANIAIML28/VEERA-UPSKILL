@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Problem, UserProfile, TestResultRecord } from '../types';
+import { Problem, UserProfile, TestResultRecord, Level } from '../types';
+import { LEVELS } from '../constants';
 
 interface AdminProps {
   problems: Problem[];
@@ -40,6 +41,7 @@ const ProblemManagementTab: React.FC<Pick<AdminProps, 'problems' | 'onAddProblem
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [difficulty, setDifficulty] = useState<'Easy' | 'Medium' | 'Hard'>('Easy');
+    const [level, setLevel] = useState<Level>('Arrays');
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -52,6 +54,7 @@ const ProblemManagementTab: React.FC<Pick<AdminProps, 'problems' | 'onAddProblem
             title: `${problems.length + 1}. ${title}`,
             description,
             difficulty,
+            level,
             examples: [],
             constraints: [],
         };
@@ -59,6 +62,7 @@ const ProblemManagementTab: React.FC<Pick<AdminProps, 'problems' | 'onAddProblem
         setTitle('');
         setDescription('');
         setDifficulty('Easy');
+        setLevel('Arrays');
     };
 
     return (
@@ -67,7 +71,10 @@ const ProblemManagementTab: React.FC<Pick<AdminProps, 'problems' | 'onAddProblem
                 <h3 className="text-xl font-bold mb-4 flex-shrink-0">Existing Problems ({problems.length})</h3>
                 <ul className="space-y-2 overflow-y-auto">
                     {[...problems].reverse().map(p => (
-                        <li key={p.id} className="bg-gray-800/50 p-3 rounded-md border border-gray-700">{p.title} - <span className="font-semibold">{p.difficulty}</span></li>
+                        <li key={p.id} className="bg-gray-800/50 p-3 rounded-md border border-gray-700 flex justify-between items-center">
+                           <span>{p.title} - <span className="font-semibold">{p.difficulty}</span></span>
+                           <span className="text-xs font-medium bg-blue-900/70 text-blue-300 px-2 py-1 rounded-full">{p.level}</span>
+                        </li>
                     ))}
                 </ul>
             </div>
@@ -78,17 +85,25 @@ const ProblemManagementTab: React.FC<Pick<AdminProps, 'problems' | 'onAddProblem
                         <label htmlFor="title" className="block text-sm font-medium text-gray-300">Title</label>
                         <FormInput type="text" id="title" value={title} onChange={e => setTitle(e.target.value)} />
                     </div>
-                    <div>
-                        <label htmlFor="difficulty" className="block text-sm font-medium text-gray-300">Difficulty</label>
-                        <FormSelect id="difficulty" value={difficulty} onChange={e => setDifficulty(e.target.value as 'Easy' | 'Medium' | 'Hard')}>
-                            <option>Easy</option>
-                            <option>Medium</option>
-                            <option>Hard</option>
-                        </FormSelect>
+                     <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label htmlFor="difficulty" className="block text-sm font-medium text-gray-300">Difficulty</label>
+                            <FormSelect id="difficulty" value={difficulty} onChange={e => setDifficulty(e.target.value as 'Easy' | 'Medium' | 'Hard')}>
+                                <option>Easy</option>
+                                <option>Medium</option>
+                                <option>Hard</option>
+                            </FormSelect>
+                        </div>
+                         <div>
+                            <label htmlFor="level" className="block text-sm font-medium text-gray-300">Level</label>
+                            <FormSelect id="level" value={level} onChange={e => setLevel(e.target.value as Level)}>
+                                {LEVELS.map(l => <option key={l}>{l}</option>)}
+                            </FormSelect>
+                        </div>
                     </div>
                     <div>
                         <label htmlFor="description" className="block text-sm font-medium text-gray-300">Description (HTML allowed)</label>
-                        <FormTextArea id="description" rows={8} value={description} onChange={e => setDescription(e.target.value)} />
+                        <FormTextArea id="description" rows={6} value={description} onChange={e => setDescription(e.target.value)} />
                     </div>
                     <button type="submit" className="px-4 py-2 rounded-md font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors">Add Problem</button>
                 </form>
@@ -185,7 +200,10 @@ const TestResultsTab: React.FC<Pick<AdminProps, 'allTestResults'>> = ({ allTestR
                         <div className="flex items-center justify-between cursor-pointer" onClick={() => setExpandedId(expandedId === index ? null : index)}>
                             <div>
                                 <p className="font-semibold text-white">{record.userName} <span className="text-sm text-gray-400 font-mono">({record.userId})</span></p>
-                                <p className="text-xs text-gray-500">{new Date(record.testDate).toLocaleString()}</p>
+                                <div className="flex items-center space-x-3 mt-1">
+                                    <span className="text-xs font-medium bg-gray-700 text-gray-300 px-2 py-0.5 rounded-full">{record.level}</span>
+                                    <p className="text-xs text-gray-500">{new Date(record.testDate).toLocaleString()}</p>
+                                </div>
                             </div>
                             <div className="text-right">
                                 <p className="text-2xl font-bold text-blue-400">{Math.round(record.totalScore)}<span className="text-lg text-gray-500">/100</span></p>

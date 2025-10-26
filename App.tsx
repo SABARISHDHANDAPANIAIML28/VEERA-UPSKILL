@@ -3,14 +3,13 @@ import { Header } from './components/Header';
 import { Login } from './components/Login';
 import { Admin } from './components/Admin';
 import { TestWorkspace } from './components/TestWorkspace';
-import { Problem, Test, FinalResult, CodeSnippets, Language, UserProfile, TestResultRecord } from './types';
-import { ALL_PROBLEMS, DEFAULT_SNIPPETS, PREDEFINED_USERS, ADMIN_PASSWORD } from './constants';
+import { Problem, Test, FinalResult, CodeSnippets, Language, UserProfile, TestResultRecord, Level } from './types';
+import { ALL_PROBLEMS, DEFAULT_SNIPPETS, PREDEFINED_USERS, ADMIN_PASSWORD, LEVELS } from './constants';
 import { runCodeWithGemini } from './services/geminiService';
 
 const App: React.FC = () => {
   const [user, setUser] = useState<UserProfile | null>(null);
   
-  // Refactored state initialization to be synchronous from localStorage
   const [problems, setProblems] = useState<Problem[]>(() => {
     try {
       const savedProblems = localStorage.getItem('leetcode-problems');
@@ -41,13 +40,30 @@ const App: React.FC = () => {
     }
   });
 
-  const [currentTest, setCurrentTest] = useState<Test | null>(null);
+  const [currentTest, setCurrentTest] = useState<Test | null>(() => {
+    try {
+        const savedTest = localStorage.getItem('current-test');
+        if (savedTest) {
+            const parsedTest = JSON.parse(savedTest);
+            if (parsedTest.endTime > Date.now()) {
+                return parsedTest;
+            }
+            localStorage.removeItem('current-test');
+        }
+        return null;
+    } catch (error) {
+        console.error("Failed to load current test from localStorage", error);
+        return null;
+    }
+  });
+  
   const [solutions, setSolutions] = useState<{ [problemId: number]: CodeSnippets }>({});
   const [lastScore, setLastScore] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
-  
-  // Refactored data persistence into useEffect hooks for reliability
+  const [timerDisplay, setTimerDisplay] = useState<string | null>(null);
+  const [selectedLevel, setSelectedLevel] = useState<Level>('Arrays');
+
   useEffect(() => {
     try {
       localStorage.setItem('leetcode-problems', JSON.stringify(problems));
@@ -71,6 +87,18 @@ const App: React.FC = () => {
       console.error("Failed to save test results to localStorage", error);
     }
   }, [allTestResults]);
+
+  useEffect(() => {
+    try {
+        if (currentTest) {
+            localStorage.setItem('current-test', JSON.stringify(currentTest));
+        } else {
+            localStorage.removeItem('current-test');
+        }
+    } catch (error) {
+        console.error("Failed to save current test to localStorage", error);
+    }
+  }, [currentTest]);
   
   const handleLogin = useCallback((userId: string, requestedRole: 'admin' | 'user', password?: string) => {
     setLastScore(null);
@@ -171,25 +199,29 @@ const App: React.FC = () => {
   }, [users]);
 
   const handleStartTest = useCallback(() => {
-    const shuffled = [...problems].sort(() => 0.5 - Math.random());
-    const selectedProblems = shuffled.slice(0, 2) as [Problem, Problem];
-    
-    if(selectedProblems.length < 2) {
-        alert("Not enough problems to start a test. Admin needs to add at least 2 problems.");
-        return;
+    const problemsForLevel = problems.filter(p => p.level === selectedLevel);
+
+    if (problemsForLevel.length < 2) {
+      alert(`Not enough problems for the "${selectedLevel}" level to start a test. Admin needs to add at least 2 problems for this level.`);
+      return;
     }
+
+    const shuffled = [...problemsForLevel].sort(() => 0.5 - Math.random());
+    const selectedProblems = shuffled.slice(0, 2) as [Problem, Problem];
     
     const newTest: Test = {
         problems: selectedProblems,
-        solutions: {}
+        solutions: {},
+        endTime: Date.now() + 3600 * 1000, // 1 hour from now
+        level: selectedLevel,
     };
     setCurrentTest(newTest);
     setSolutions({});
     setLastScore(null);
-  }, [problems]);
+  }, [problems, selectedLevel]);
   
   const handleEndTest = useCallback(async () => {
-    if (!currentTest || !user) return;
+    if (!currentTest || !user || isSubmitting) return;
 
     setIsSubmitting(true);
     try {
@@ -227,6 +259,7 @@ const App: React.FC = () => {
           testDate: Date.now(),
           totalScore,
           results,
+          level: currentTest.level,
       };
 
       setAllTestResults(prev => [...prev, newRecord]);
@@ -239,7 +272,34 @@ const App: React.FC = () => {
     } finally {
         setIsSubmitting(false);
     }
-  }, [currentTest, user, solutions]);
+  }, [currentTest, user, solutions, isSubmitting]);
+
+  useEffect(() => {
+    if (!currentTest) {
+        setTimerDisplay(null);
+        return;
+    }
+
+    const intervalId = setInterval(() => {
+        const now = Date.now();
+        const remaining = currentTest.endTime - now;
+
+        if (remaining <= 0) {
+            clearInterval(intervalId);
+            setTimerDisplay("00:00");
+            alert("Time's up! Your test is being submitted automatically.");
+            handleEndTest();
+        } else {
+            const minutes = Math.floor((remaining / 1000) / 60);
+            const seconds = Math.floor((remaining / 1000) % 60);
+            setTimerDisplay(
+                `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+            );
+        }
+    }, 1000);
+
+    return () => clearInterval(intervalId);
+  }, [currentTest, handleEndTest]);
 
   const renderContent = () => {
     const ScoreCircle = ({ score }: { score: number }) => {
@@ -365,15 +425,30 @@ const App: React.FC = () => {
                />;
       } else {
         return (
-          <div className="flex-grow flex flex-col items-center justify-center text-white">
-            <h2 className="text-2xl mb-4">Ready to start the test?</h2>
-            <p className="text-gray-400 mb-8">You will have to complete 2 questions.</p>
-            <button
-              onClick={handleStartTest}
-              className="px-8 py-3 rounded-md text-lg font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors transform hover:scale-105"
-            >
-              Start Test
-            </button>
+          <div className="flex-grow flex flex-col items-center justify-center text-white p-4">
+            <div className="w-full max-w-md text-center">
+                <h2 className="text-3xl font-bold mb-2">Ready to start the test?</h2>
+                <p className="text-gray-400 mb-8">Select a level, and you'll have one hour to complete two questions.</p>
+                <div className="w-full max-w-xs mx-auto mb-8">
+                    <label htmlFor="level-select" className="block text-sm font-medium text-gray-300 mb-2 text-left">
+                        Choose a Level
+                    </label>
+                    <select
+                        id="level-select"
+                        value={selectedLevel}
+                        onChange={(e) => setSelectedLevel(e.target.value as Level)}
+                        className="block w-full bg-gray-800 border border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 sm:text-lg p-3 transition-all"
+                    >
+                        {LEVELS.map(level => <option key={level} value={level}>{level}</option>)}
+                    </select>
+                </div>
+                <button
+                onClick={handleStartTest}
+                className="px-8 py-3 rounded-md text-lg font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors transform hover:scale-105"
+                >
+                Start Test on {selectedLevel}
+                </button>
+            </div>
           </div>
         );
       }
@@ -389,6 +464,7 @@ const App: React.FC = () => {
         onSignOut={handleSignOut}
         onSubmitTest={currentTest ? handleEndTest : undefined}
         isSubmitting={isSubmitting}
+        timerDisplay={timerDisplay}
       />
       <main className="flex-grow flex flex-col overflow-hidden">
         {renderContent()}

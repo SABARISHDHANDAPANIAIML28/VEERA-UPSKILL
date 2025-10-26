@@ -6,25 +6,24 @@ interface HeaderProps {
   onSignOut: () => void;
   onSubmitTest?: () => void;
   isSubmitting?: boolean;
+  timerDisplay?: string | null;
 }
 
-export const Header: React.FC<HeaderProps> = ({ user, onSignOut, onSubmitTest, isSubmitting }) => {
+export const Header: React.FC<HeaderProps> = ({ user, onSignOut, onSubmitTest, isSubmitting, timerDisplay }) => {
   return (
     <header className="flex-shrink-0 bg-[#161b22]/80 backdrop-blur-sm border-b border-gray-700/50 px-4 py-2 flex items-center justify-between">
       <div className="flex items-center space-x-4">
-        <div className="flex items-center space-x-2">
-           <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-8 w-8 text-blue-400"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-            >
-              <path d="M12.707 2.293a1 1 0 00-1.414 0L7 6.586V3a1 1 0 00-2 0v5a1 1 0 001 1h5a1 1 0 000-2H8.414l4.293-4.293a1 1 0 000-1.414zM11 18a1 1 0 100-2h2.586l-4.293-4.293a1 1 0 00-1.414 1.414L12.172 17H9a1 1 0 100 2h5a1 1 0 001-1v-5a1 1 0 10-2 0v2.586l-4.293-4.293a1 1 0 10-1.414 1.414L11.586 18H11z" />
-            </svg>
-            <h1 className="text-xl font-bold text-gray-200">Veera Upskill</h1>
-        </div>
+        <h1 className="text-xl font-bold text-white tracking-wider">Vera Upskill</h1>
       </div>
       <div className="flex items-center space-x-4">
+        {timerDisplay && (
+          <div className="flex items-center space-x-2 bg-gray-700/50 px-3 py-1.5 rounded-md">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span className="font-mono font-semibold text-white tracking-wider">{timerDisplay}</span>
+          </div>
+        )}
         {onSubmitTest && (
           <button
             onClick={onSubmitTest}

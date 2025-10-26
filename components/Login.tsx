@@ -37,16 +37,9 @@ export const Login: React.FC<LoginProps> = ({ onLogin, loginError }) => {
       </div>
       <div className="w-full max-w-sm bg-gray-800/50 rounded-2xl shadow-2xl p-8 text-center border border-gray-700">
         <div className="flex justify-center mb-6">
-           <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-12 w-12 text-blue-400"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-            >
-              <path d="M12.707 2.293a1 1 0 00-1.414 0L7 6.586V3a1 1 0 00-2 0v5a1 1 0 001 1h5a1 1 0 000-2H8.414l4.293-4.293a1 1 0 000-1.414zM11 18a1 1 0 100-2h2.586l-4.293-4.293a1 1 0 00-1.414 1.414L12.172 17H9a1 1 0 100 2h5a1 1 0 001-1v-5a1 1 0 10-2 0v2.586l-4.293-4.293a1 1 0 10-1.414 1.414L11.586 18H11z" />
-            </svg>
+           <h1 className="text-4xl font-bold text-blue-400 tracking-wide">Vera Upskill</h1>
         </div>
-        <h1 className="text-3xl font-bold mb-2 text-gray-100">{loginMode === 'user' ? 'Welcome to Veera Upskill' : 'Admin Portal'}</h1>
+        <h1 className="text-3xl font-bold mb-2 text-gray-100">{loginMode === 'user' ? 'Welcome!' : 'Admin Portal'}</h1>
         <p className="text-gray-400 mb-8">{loginMode === 'user' ? 'Please enter your User ID to continue.' : 'Please enter your Admin ID and Password.'}</p>
         
         <form onSubmit={handleSubmit} className="space-y-4">

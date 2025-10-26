@@ -1,12 +1,10 @@
 
+
 import React from 'react';
 import { Problem } from '../types';
 
 interface ProblemDescriptionProps {
   problem: Problem;
-  onGetHint: () => void;
-  isHintLoading: boolean;
-  hint: string | null;
 }
 
 const DifficultyChip: React.FC<{ difficulty: 'Easy' | 'Medium' | 'Hard' }> = ({ difficulty }) => {
@@ -23,27 +21,13 @@ const DifficultyChip: React.FC<{ difficulty: 'Easy' | 'Medium' | 'Hard' }> = ({ 
   );
 };
 
-export const ProblemDescription: React.FC<ProblemDescriptionProps> = ({ problem, onGetHint, isHintLoading, hint }) => {
+export const ProblemDescription: React.FC<ProblemDescriptionProps> = ({ problem }) => {
   return (
     <div className="p-4 bg-transparent h-full text-gray-300">
       <h2 className="text-2xl font-semibold text-gray-100 mb-2">{problem.title}</h2>
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6">
         <DifficultyChip difficulty={problem.difficulty} />
-         <button 
-          onClick={onGetHint} 
-          disabled={isHintLoading}
-          className="px-3 py-1 text-xs font-semibold bg-gray-700 text-gray-200 rounded-md hover:bg-gray-600 transition-colors disabled:opacity-50"
-        >
-          {isHintLoading ? 'Getting Hint...' : 'Get a Hint ✨'}
-        </button>
       </div>
-
-      {hint && (
-        <div className="mb-4 bg-blue-900/50 p-4 rounded-lg border border-blue-700/50">
-           <p className="font-semibold mb-1 text-blue-300">💡 Hint</p>
-           <p className="text-sm text-blue-200">{hint}</p>
-        </div>
-      )}
 
       <div className="prose prose-invert prose-sm max-w-none mb-6 text-gray-400" dangerouslySetInnerHTML={{ __html: problem.description }} />
 

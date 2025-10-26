@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 
 interface CodeEditorProps {
   code: string;
@@ -69,6 +69,17 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
 }) => {
   const preRef = useRef<HTMLPreElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [showWarning, setShowWarning] = useState(false);
+  const warningTimeoutRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (warningTimeoutRef.current) {
+        clearTimeout(warningTimeoutRef.current);
+      }
+    };
+  }, []);
+
 
   const handleScroll = () => {
       if (preRef.current && textareaRef.current) {
@@ -78,13 +89,52 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
   };
   
   const highlightedHtml = highlightC(code);
+  
+  const handleRestrictedAction = (e: React.ClipboardEvent | React.MouseEvent | React.KeyboardEvent) => {
+    e.preventDefault();
+    setShowWarning(true);
+    
+    if (warningTimeoutRef.current) {
+      clearTimeout(warningTimeoutRef.current);
+    }
+    
+    warningTimeoutRef.current = window.setTimeout(() => {
+      setShowWarning(false);
+    }, 3000);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Tab') {
+        e.preventDefault();
+        const { selectionStart, selectionEnd } = e.currentTarget;
+        const newCode = code.substring(0, selectionStart) + "  " + code.substring(selectionEnd);
+        onCodeChange(newCode);
+
+        setTimeout(() => {
+            if (textareaRef.current) {
+                textareaRef.current.selectionStart = textareaRef.current.selectionEnd = selectionStart + 2;
+            }
+        }, 0);
+        return;
+    }
+
+    if ((e.ctrlKey || e.metaKey) && ['c', 'v', 'x', 'a'].includes(e.key.toLowerCase())) {
+        handleRestrictedAction(e);
+    }
+  };
+
 
   return (
     <div className="flex-grow flex flex-col bg-[#0d1117]">
-      <div className="flex-shrink-0 flex items-center justify-between bg-[#161b22] px-4 py-2 border-b border-gray-700">
+      <div className="flex-shrink-0 flex items-center justify-between bg-[#161b22] px-4 py-2 border-b border-gray-700 h-12">
         <div className="bg-gray-700 text-gray-200 rounded px-3 py-1 text-sm font-medium">
             C
         </div>
+         {showWarning && (
+          <div className="text-yellow-300 bg-yellow-800/50 px-3 py-1 rounded-md text-xs font-semibold">
+            Copy, Cut, Paste, and Select All are disabled for a genuine test experience.
+          </div>
+        )}
       </div>
       <div className="flex-grow relative">
         <textarea
@@ -92,6 +142,11 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
           value={code}
           onChange={(e) => onCodeChange(e.target.value)}
           onScroll={handleScroll}
+          onCopy={handleRestrictedAction}
+          onCut={handleRestrictedAction}
+          onPaste={handleRestrictedAction}
+          onContextMenu={handleRestrictedAction}
+          onKeyDown={handleKeyDown}
           className="absolute top-0 left-0 w-full h-full p-4 m-0 box-border bg-transparent text-transparent caret-white font-mono text-sm resize-none focus:outline-none z-10 whitespace-pre-wrap overflow-auto"
           spellCheck="false"
         />
